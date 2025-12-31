@@ -23,7 +23,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 md:relative md:w-64 glass border-t md:border-t-0 md:border-r flex md:flex-col justify-around md:justify-start md:p-6 z-50 transition-colors" style={{ borderColor: 'var(--sidebar-border)' }}>
+    <nav className="fixed bottom-0 left-0 right-0 md:relative md:w-64 glass border-t md:border-t-0 md:border-r flex md:flex-col justify-around md:justify-start md:p-6 z-50 transition-colors" style={{ borderColor: 'var(--sidebar-border)', background: 'var(--sidebar-bg)' }}>
       <div className="hidden md:block mb-12">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 shadow-lg shadow-cyan-500/20 flex items-center justify-center font-black text-xl italic font-outfit text-white">N</div>
@@ -62,7 +62,9 @@ const App: React.FC = () => {
   const { settings } = usePlannerStore();
 
   useEffect(() => {
-    document.documentElement.className = settings.theme;
+    // Explicitly set the theme class on the html element
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(settings.theme);
   }, [settings.theme]);
 
   return (

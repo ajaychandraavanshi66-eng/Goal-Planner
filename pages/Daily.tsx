@@ -70,7 +70,7 @@ const Daily: React.FC = () => {
                 className="space-y-4"
               >
                 <div className="flex items-center gap-3 ml-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xl bg-white/5 border border-white/5 shadow-inner">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xl glass-inner shadow-inner">
                     {goal.icon}
                   </div>
                   <h2 className="text-lg font-bold font-outfit tracking-wide" style={{ color: goal.color }}>
@@ -85,7 +85,7 @@ const Daily: React.FC = () => {
                       <GlassCard 
                         key={task.id} 
                         className={`transition-all duration-500 border-l-4 ${isCompleted ? 'opacity-50 grayscale-[0.2]' : ''}`}
-                        borderColor={isCompleted ? 'rgba(128,128,128,0.1)' : goal.color + '30'}
+                        borderColor={isCompleted ? 'var(--glass-border)' : goal.color + '40'}
                         hoverEffect={!isCompleted}
                       >
                         <div className="flex items-center justify-between gap-4">
@@ -104,7 +104,7 @@ const Daily: React.FC = () => {
                                   />
                                 </div>
                               ) : (
-                                <Circle className="w-9 h-9 text-slate-400/50 hover:text-cyan-400 hover:scale-105 transition-all" />
+                                <Circle className="w-9 h-9 opacity-30 hover:text-cyan-400 hover:scale-105 transition-all" />
                               )}
                             </button>
                             <div className="min-w-0">
@@ -145,7 +145,7 @@ const Daily: React.FC = () => {
               animate={{ opacity: 1 }} 
               className="text-center py-32 flex flex-col items-center gap-4"
             >
-              <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4">
+              <div className="w-20 h-20 rounded-full glass-inner flex items-center justify-center mb-4">
                 <CalendarIcon size={32} className="opacity-20" />
               </div>
               <p className="opacity-40 text-xl font-outfit italic">Your schedule is clear for today.</p>

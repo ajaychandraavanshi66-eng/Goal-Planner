@@ -1,4 +1,3 @@
-
 import dayjs from 'dayjs';
 import { Task, RepeatType, Completion } from '../types';
 
@@ -38,36 +37,83 @@ export const getDayCompletions = (completions: Completion[], tasks: Task[], date
   return (completedCount / dueTasks.length) * 100;
 };
 
+export const getGoalRecentProgress = (completions: Completion[], tasks: Task[], goalId: string) => {
+  const goalTasks = tasks.filter(t => t.goalId === goalId);
+  if (goalTasks.length === 0) return 0;
+  
+  let totalDue = 0;
+  let totalDone = 0;
+  
+  for (let i = 0; i < 7; i++) {
+    const d = dayjs().subtract(i, 'day').format('YYYY-MM-DD');
+    const due = goalTasks.filter(t => isTaskDueOnDate(t, d));
+    const done = completions.filter(c => c.date === d && c.isCompleted && due.some(dt => dt.id === c.taskId));
+    totalDue += due.length;
+    totalDone += done.length;
+  }
+  
+  return totalDue > 0 ? (totalDone / totalDue) * 100 : 0;
+};
+
+export const getMonthStats = (completions: Completion[], tasks: Task[], month: dayjs.Dayjs) => {
+  const start = month.startOf('month');
+  const daysInMonth = month.daysInMonth();
+  let totalDue = 0;
+  let totalCompleted = 0;
+
+  for (let i = 0; i < daysInMonth; i++) {
+    const current = start.add(i, 'day');
+    const dateStr = current.format('YYYY-MM-DD');
+    const due = tasks.filter(t => t.isActive && isTaskDueOnDate(t, dateStr));
+    const finished = completions.filter(c => c.date === dateStr && c.isCompleted);
+    
+    totalDue += due.length;
+    totalCompleted += finished.filter(c => due.some(d => d.id === c.taskId)).length;
+  }
+
+  return totalDue > 0 ? (totalCompleted / totalDue) * 100 : 0;
+};
+
+const isDaySuccessful = (date: dayjs.Dayjs, completions: Completion[], tasks: Task[]) => {
+  const dateStr = date.format('YYYY-MM-DD');
+  const due = tasks.filter(t => t.isActive && isTaskDueOnDate(t, dateStr));
+  if (due.length === 0) return true;
+  const finished = completions.filter(c => c.date === dateStr && c.isCompleted);
+  return finished.length >= due.length;
+};
+
 export const calculateStreak = (completions: Completion[], tasks: Task[]) => {
   let streak = 0;
   let current = dayjs().startOf('day');
   
-  // Check today first. If not complete but yesterday was, the streak is still valid until today ends.
-  // Actually, standard streak: count back from yesterday, and include today if finished.
-  
-  const isDaySuccessful = (date: dayjs.Dayjs) => {
-    const dateStr = date.format('YYYY-MM-DD');
-    const due = tasks.filter(t => t.isActive && isTaskDueOnDate(t, dateStr));
-    if (due.length === 0) return true; // Passive success if nothing due
-    const finished = completions.filter(c => c.date === dateStr && c.isCompleted);
-    return finished.length >= due.length;
-  };
-
-  // Start from today or yesterday
-  if (!isDaySuccessful(current)) {
+  if (!isDaySuccessful(current, completions, tasks)) {
     current = current.subtract(1, 'day');
   }
 
-  while (streak < 1000) { // Safety break
-    if (isDaySuccessful(current)) {
+  while (streak < 1000) {
+    if (isDaySuccessful(current, completions, tasks)) {
       streak++;
       current = current.subtract(1, 'day');
     } else {
       break;
     }
   }
-  
   return streak;
+};
+
+export const calculateBestStreak = (completions: Completion[], tasks: Task[]) => {
+  let best = 0;
+  let currentStreak = 0;
+  for (let i = 0; i < 365; i++) {
+    const date = dayjs().subtract(i, 'day');
+    if (isDaySuccessful(date, completions, tasks)) {
+      currentStreak++;
+      if (currentStreak > best) best = currentStreak;
+    } else {
+      currentStreak = 0;
+    }
+  }
+  return best;
 };
 
 export const getWeeklyStats = (completions: Completion[], tasks: Task[]) => {
@@ -86,7 +132,6 @@ export const getGoalPerformance = (goals: any[], tasks: Task[], completions: Com
     const goalTasks = tasks.filter(t => t.goalId === goal.id);
     if (goalTasks.length === 0) return { name: goal.title, value: 0, color: goal.color };
     
-    // Average completion over last 30 days for this goal
     let totalScore = 0;
     for (let i = 0; i < 30; i++) {
       const date = dayjs().subtract(i, 'day').format('YYYY-MM-DD');
@@ -95,7 +140,7 @@ export const getGoalPerformance = (goals: any[], tasks: Task[], completions: Com
         const finished = completions.filter(c => c.date === date && c.isCompleted && due.some(dt => dt.id === c.taskId));
         totalScore += (finished.length / due.length);
       } else {
-        totalScore += 1; // Count days with no tasks as successful for consistency
+        totalScore += 1;
       }
     }
     
