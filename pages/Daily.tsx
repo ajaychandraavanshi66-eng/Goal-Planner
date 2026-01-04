@@ -91,7 +91,13 @@ const Daily: React.FC = () => {
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex items-center gap-4 flex-1">
                             <button 
-                              onClick={() => toggleCompletion(task.id, today)}
+                              onClick={async () => {
+                                try {
+                                  await toggleCompletion(task.id, today);
+                                } catch (error) {
+                                  console.error('Failed to toggle completion:', error);
+                                }
+                              }}
                               className="focus:outline-none transition-all active:scale-90"
                             >
                               {isCompleted ? (
@@ -150,7 +156,7 @@ const Daily: React.FC = () => {
               </div>
               <p className="opacity-40 text-xl font-outfit italic">Your schedule is clear for today.</p>
               <button 
-                onClick={() => window.location.hash = '#/goals'}
+                onClick={() => window.location.href = '/dashboard/goals'}
                 className="px-6 py-2 rounded-xl font-bold transition-all active:scale-95"
                 style={{ 
                   backgroundColor: `${settings.accentColor}1A`,

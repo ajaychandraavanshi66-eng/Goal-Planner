@@ -33,12 +33,16 @@ const Goals: React.FC = () => {
     setExpandedGoal(expandedGoal === id ? null : id);
   };
 
-  const handleCreateGoal = (e: React.FormEvent) => {
+  const handleCreateGoal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGoal.title.trim()) return;
-    addGoal(newGoal);
-    setIsGoalModalOpen(false);
-    setNewGoal({ title: '', icon: '🎯', color: '#22d3ee', description: '' });
+    try {
+      await addGoal(newGoal);
+      setIsGoalModalOpen(false);
+      setNewGoal({ title: '', icon: '🎯', color: '#22d3ee', description: '' });
+    } catch (error) {
+      console.error('Failed to create goal:', error);
+    }
   };
 
   const openAddTask = (goalId: string) => {
@@ -63,20 +67,24 @@ const Goals: React.FC = () => {
     setIsTaskModalOpen(true);
   };
 
-  const handleSaveTask = (e: React.FormEvent) => {
+  const handleSaveTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTask || !editingTask.title?.trim() || !targetGoalId) return;
 
-    if ('id' in editingTask) {
-      updateTask(editingTask.id as string, editingTask);
-    } else {
-      addTask({
-        ...editingTask as Omit<Task, 'id' | 'createdAt'>,
-        goalId: targetGoalId
-      });
+    try {
+      if ('id' in editingTask) {
+        await updateTask(editingTask.id as string, editingTask);
+      } else {
+        await addTask({
+          ...editingTask as Omit<Task, 'id' | 'createdAt'>,
+          goalId: targetGoalId
+        });
+      }
+      setIsTaskModalOpen(false);
+      setEditingTask(null);
+    } catch (error) {
+      console.error('Failed to save task:', error);
     }
-    setIsTaskModalOpen(false);
-    setEditingTask(null);
   };
 
   return (
@@ -175,7 +183,14 @@ const Goals: React.FC = () => {
                                     <Edit2 size={16} />
                                   </button>
                                   <button 
-                                    onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
+                                    onClick={async (e) => { 
+                                      e.stopPropagation(); 
+                                      try {
+                                        await deleteTask(task.id);
+                                      } catch (error) {
+                                        console.error('Failed to delete task:', error);
+                                      }
+                                    }}
                                     className="p-2 hover:bg-white/10 rounded-lg opacity-40 hover:opacity-100 transition-opacity text-red-400"
                                   >
                                     <Trash2 size={16} />
@@ -188,7 +203,14 @@ const Goals: React.FC = () => {
                           )}
                         </div>
                         <div className="flex justify-end pt-4">
-                           <button onClick={(e) => { e.stopPropagation(); deleteGoal(goal.id); }} className="text-[10px] text-red-500 font-bold uppercase tracking-widest hover:underline opacity-50 hover:opacity-100">Delete Entire Goal</button>
+                           <button onClick={async (e) => { 
+                             e.stopPropagation(); 
+                             try {
+                               await deleteGoal(goal.id);
+                             } catch (error) {
+                               console.error('Failed to delete goal:', error);
+                             }
+                           }} className="text-[10px] text-red-500 font-bold uppercase tracking-widest hover:underline opacity-50 hover:opacity-100">Delete Entire Goal</button>
                         </div>
                       </div>
                     </motion.div>

@@ -1,16 +1,7 @@
-
-import { useState, useEffect, useCallback } from 'react';
-import { Goal, Task, Completion, RepeatType, Priority, UserSettings } from '../types';
+import { useState, useEffect } from 'react';
+import { Goal, Task, Completion, UserSettings } from '../types';
+import { api } from '../utils/api';
 import dayjs from 'dayjs';
-
-const STORAGE_KEY = 'neon_planner_data';
-
-interface PlannerData {
-  goals: Goal[];
-  tasks: Task[];
-  completions: Completion[];
-  settings: UserSettings;
-}
 
 const DEFAULT_SETTINGS: UserSettings = {
   theme: 'dark',
@@ -20,161 +11,164 @@ const DEFAULT_SETTINGS: UserSettings = {
   startWeekOnMonday: true,
 };
 
-// Initial mock data if empty
-const INITIAL_GOALS: Goal[] = [
-  { id: 'g1', title: 'Health', icon: '🏃', color: '#22d3ee', description: 'Physical and mental well-being', createdAt: dayjs().toISOString() },
-  { id: 'g2', title: 'Wealth', icon: '💰', color: '#a855f7', description: 'Financial growth and planning', createdAt: dayjs().toISOString() },
-  { id: 'g3', title: 'Wisdom', icon: '📚', color: '#ec4899', description: 'Learning and communication', createdAt: dayjs().toISOString() }
-];
-
-const INITIAL_TASKS: Task[] = [
-  { 
-    id: 't1', 
-    goalId: 'g1', 
-    title: 'Morning Meditation', 
-    description: '15 mins focus', 
-    startTime: '06:00', 
-    duration: 15, 
-    repeatType: RepeatType.DAILY, 
-    repeatConfig: [], 
-    startDate: dayjs().format('YYYY-MM-DD'), 
-    isActive: true, 
-    priority: Priority.HIGH, 
-    createdAt: dayjs().toISOString() 
-  },
-  { 
-    id: 't2', 
-    goalId: 'g2', 
-    title: 'Market Review', 
-    description: 'Check portfolio', 
-    startTime: '09:00', 
-    duration: 30, 
-    repeatType: RepeatType.WEEKLY, 
-    repeatConfig: ['Mon', 'Wed', 'Fri'], 
-    startDate: dayjs().format('YYYY-MM-DD'), 
-    isActive: true, 
-    priority: Priority.MEDIUM, 
-    createdAt: dayjs().toISOString() 
-  }
-];
-
 export const usePlannerStore = () => {
-  const [data, setData] = useState<PlannerData>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Migration for new settings
-        if (!parsed.settings) {
-          parsed.settings = DEFAULT_SETTINGS;
-        } else {
-          if (!parsed.settings.theme) parsed.settings.theme = 'dark';
-          // Ensure all settings fields exist
-          parsed.settings = { ...DEFAULT_SETTINGS, ...parsed.settings };
-        }
-        // Ensure all required fields exist
-        return {
-          goals: parsed.goals || INITIAL_GOALS,
-          tasks: parsed.tasks || INITIAL_TASKS,
-          completions: parsed.completions || [],
-          settings: parsed.settings
-        };
-      } catch (error) {
-        console.error('Error parsing stored data:', error);
-        return {
-          goals: INITIAL_GOALS,
-          tasks: INITIAL_TASKS,
-          completions: [],
-          settings: DEFAULT_SETTINGS
-        };
-      }
-    }
-    return {
-      goals: INITIAL_GOALS,
-      tasks: INITIAL_TASKS,
-      completions: [],
-      settings: DEFAULT_SETTINGS
-    };
-  });
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [completions, setCompletions] = useState<Completion[]>([]);
+  const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Load data from API on mount
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [data]);
+    const loadData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const [goalsRes, tasksRes, completionsRes, settingsRes] = await Promise.all([
+          api.getGoals(),
+          api.getTasks(),
+          api.getCompletions(),
+          api.getSettings(),
+        ]);
+
+        setGoals(goalsRes.goals || []);
+        setTasks(tasksRes.tasks || []);
+        setCompletions(completionsRes.completions || []);
+        setSettings(settingsRes.settings || DEFAULT_SETTINGS);
+        setError(null);
+      } catch (err: any) {
+        setError(err.message);
+        // If unauthorized, clear token
+        if (err.message.includes('authorized') || err.message.includes('401')) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   // Goals
-  const addGoal = (goal: Omit<Goal, 'id' | 'createdAt'>) => {
-    const newGoal = { ...goal, id: crypto.randomUUID(), createdAt: dayjs().toISOString() };
-    setData(prev => ({ ...prev, goals: [...prev.goals, newGoal] }));
+  const addGoal = async (goal: Omit<Goal, 'id' | 'createdAt'>) => {
+    try {
+      const response = await api.createGoal(goal);
+      setGoals(prev => [...prev, response.goal]);
+      return response.goal;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   };
 
-  const updateGoal = (id: string, updates: Partial<Goal>) => {
-    setData(prev => ({
-      ...prev,
-      goals: prev.goals.map(g => g.id === id ? { ...g, ...updates } : g)
-    }));
+  const updateGoal = async (id: string, updates: Partial<Goal>) => {
+    try {
+      const response = await api.updateGoal(id, updates);
+      setGoals(prev => prev.map(g => g.id === id ? response.goal : g));
+      return response.goal;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   };
 
-  const deleteGoal = (id: string) => {
-    setData(prev => ({
-      ...prev,
-      goals: prev.goals.filter(g => g.id !== id),
-      tasks: prev.tasks.filter(t => t.goalId !== id)
-    }));
+  const deleteGoal = async (id: string) => {
+    try {
+      await api.deleteGoal(id);
+      setGoals(prev => prev.filter(g => g.id !== id));
+      // Tasks and completions are cascade deleted on backend
+      setTasks(prev => prev.filter(t => {
+        if (t.goalId === id) {
+          setCompletions(prevComps => prevComps.filter(c => c.taskId !== t.id));
+          return false;
+        }
+        return true;
+      }));
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   };
 
   // Tasks
-  const addTask = (task: Omit<Task, 'id' | 'createdAt'>) => {
-    const newTask = { ...task, id: crypto.randomUUID(), createdAt: dayjs().toISOString() };
-    setData(prev => ({ ...prev, tasks: [...prev.tasks, newTask] }));
+  const addTask = async (task: Omit<Task, 'id' | 'createdAt'>) => {
+    try {
+      const response = await api.createTask(task);
+      setTasks(prev => [...prev, response.task]);
+      return response.task;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   };
 
-  const updateTask = (id: string, updates: Partial<Task>) => {
-    setData(prev => ({
-      ...prev,
-      tasks: prev.tasks.map(t => t.id === id ? { ...t, ...updates } : t)
-    }));
+  const updateTask = async (id: string, updates: Partial<Task>) => {
+    try {
+      const response = await api.updateTask(id, updates);
+      setTasks(prev => prev.map(t => t.id === id ? response.task : t));
+      return response.task;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   };
 
-  const deleteTask = (id: string) => {
-    setData(prev => ({
-      ...prev,
-      tasks: prev.tasks.filter(t => t.id !== id),
-      completions: prev.completions.filter(c => c.taskId !== id)
-    }));
+  const deleteTask = async (id: string) => {
+    try {
+      await api.deleteTask(id);
+      setTasks(prev => prev.filter(t => t.id !== id));
+      // Completions are cascade deleted on backend
+      setCompletions(prev => prev.filter(c => c.taskId !== id));
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   };
 
   // Completions
-  const toggleCompletion = (taskId: string, date: string) => {
-    setData(prev => {
-      const existingIdx = prev.completions.findIndex(c => c.taskId === taskId && c.date === date);
-      if (existingIdx > -1) {
-        const newCompletions = [...prev.completions];
-        newCompletions.splice(existingIdx, 1);
-        return { ...prev, completions: newCompletions };
+  const toggleCompletion = async (taskId: string, date: string) => {
+    try {
+      const response = await api.toggleCompletion(taskId, date);
+      if (response.completion) {
+        setCompletions(prev => [...prev, response.completion]);
       } else {
-        const newCompletion = {
-          id: crypto.randomUUID(),
-          taskId,
-          date,
-          isCompleted: true,
-          completedAt: dayjs().toISOString()
-        };
-        return { ...prev, completions: [...prev.completions, newCompletion] };
+        setCompletions(prev => prev.filter(c => !(c.taskId === taskId && c.date === date)));
       }
-    });
+      return response.completion;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   };
 
-  const updateSettings = (updates: Partial<UserSettings>) => {
-    setData(prev => {
-      const newSettings = { ...prev.settings, ...updates };
+  const updateSettings = async (updates: Partial<UserSettings>) => {
+    try {
+      const response = await api.updateSettings(updates);
+      setSettings(response.settings);
       // Dispatch custom event to notify other components
-      window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: newSettings }));
-      return { ...prev, settings: newSettings };
-    });
+      window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: response.settings }));
+      return response.settings;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   };
 
   return {
-    ...data,
+    goals,
+    tasks,
+    completions,
+    settings,
+    loading,
+    error,
     addGoal,
     updateGoal,
     deleteGoal,

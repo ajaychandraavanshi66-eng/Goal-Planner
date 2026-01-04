@@ -307,7 +307,13 @@ const Planner: React.FC = () => {
                         style={!isCompleted && goal ? { borderLeft: `4px solid ${goal.color}` } : {}}
                       >
                         <button 
-                          onClick={() => toggleCompletion(task.id, selectedDate)}
+                          onClick={async () => {
+                            try {
+                              await toggleCompletion(task.id, selectedDate);
+                            } catch (error) {
+                              console.error('Failed to toggle completion:', error);
+                            }
+                          }}
                           className="focus:outline-none transition-transform hover:scale-110 shrink-0"
                         >
                           {isCompleted ? (

@@ -75,6 +75,48 @@
             transition: background 0.3s ease, border-color 0.3s ease;
         }
 
+        input.glass-inner,
+        input[type="email"].glass-inner,
+        input[type="password"].glass-inner,
+        input[type="text"].glass-inner {
+            background-color: var(--card-bg-inner) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--card-border-inner) !important;
+        }
+
+        input.glass-inner:focus,
+        input.glass-inner:active,
+        input.glass-inner:focus-visible,
+        input.glass-inner:focus-within {
+            background-color: var(--card-bg-inner) !important;
+            color: var(--text-color) !important;
+            border-color: var(--accent-color) !important;
+            outline: none !important;
+        }
+
+        input.glass-inner::placeholder {
+            color: rgba(255, 255, 255, 0.4) !important;
+        }
+
+        input.glass-inner:-webkit-autofill,
+        input.glass-inner:-webkit-autofill:hover,
+        input.glass-inner:-webkit-autofill:focus,
+        input.glass-inner:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px var(--card-bg-inner) inset !important;
+            -webkit-text-fill-color: var(--text-color) !important;
+            background-color: var(--card-bg-inner) !important;
+            border: 1px solid var(--card-border-inner) !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        html.light input.glass-inner:-webkit-autofill,
+        html.light input.glass-inner:-webkit-autofill:hover,
+        html.light input.glass-inner:-webkit-autofill:focus,
+        html.light input.glass-inner:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px var(--card-bg-inner) inset !important;
+            -webkit-text-fill-color: var(--text-color) !important;
+        }
+
         .neon-border-cyan { border-color: #22d3ee; box-shadow: 0 0 10px rgba(34, 211, 238, 0.2); }
         .neon-border-purple { border-color: #a855f7; box-shadow: 0 0 10px rgba(168, 85, 247, 0.2); }
         .neon-border-pink { border-color: #ec4899; box-shadow: 0 0 10px rgba(236, 72, 153, 0.2); }

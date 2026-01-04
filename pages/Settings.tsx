@@ -60,14 +60,26 @@ const Settings: React.FC = () => {
               </div>
               <div className="flex items-center glass-inner rounded-xl p-1">
                 <button 
-                  onClick={() => updateSettings({ theme: 'light' })}
+                  onClick={async () => {
+                    try {
+                      await updateSettings({ theme: 'light' });
+                    } catch (error) {
+                      console.error('Failed to update theme:', error);
+                    }
+                  }}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${settings.theme === 'light' ? 'bg-white text-blue-600 shadow-md' : 'opacity-40 hover:opacity-100'}`}
                 >
                   <Sun size={18} />
                   <span className="text-xs font-black uppercase tracking-tighter">Light</span>
                 </button>
                 <button 
-                  onClick={() => updateSettings({ theme: 'dark' })}
+                  onClick={async () => {
+                    try {
+                      await updateSettings({ theme: 'dark' });
+                    } catch (error) {
+                      console.error('Failed to update theme:', error);
+                    }
+                  }}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${settings.theme === 'dark' ? 'bg-slate-800 text-cyan-400 shadow-md' : 'opacity-40 hover:opacity-100'}`}
                 >
                   <Moon size={18} />
@@ -85,7 +97,13 @@ const Settings: React.FC = () => {
                 {['#22d3ee', '#a855f7', '#ec4899', '#22c55e', '#f43f5e'].map(color => (
                   <button 
                     key={color}
-                    onClick={() => updateSettings({ accentColor: color })}
+                    onClick={async () => {
+                      try {
+                        await updateSettings({ accentColor: color });
+                      } catch (error) {
+                        console.error('Failed to update accent color:', error);
+                      }
+                    }}
                     className={`w-9 h-9 rounded-full border-2 transition-all ${settings.accentColor === color ? 'border-white scale-125' : 'border-transparent'}`}
                     style={{ backgroundColor: color, boxShadow: settings.accentColor === color ? `0 0 10px ${color}` : 'none' }}
                   />
@@ -99,7 +117,13 @@ const Settings: React.FC = () => {
                 <p className="text-xs opacity-60">Precision scheduling format</p>
               </div>
               <button 
-                onClick={() => updateSettings({ timeFormat24h: !settings.timeFormat24h })}
+                onClick={async () => {
+                  try {
+                    await updateSettings({ timeFormat24h: !settings.timeFormat24h });
+                  } catch (error) {
+                    console.error('Failed to update time format:', error);
+                  }
+                }}
                 className={`w-12 h-6 rounded-full transition-colors relative ${settings.timeFormat24h ? 'bg-cyan-500' : 'bg-slate-700'}`}
               >
                 <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.timeFormat24h ? 'translate-x-6' : 'translate-x-1'}`} />

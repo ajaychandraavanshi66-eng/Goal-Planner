@@ -1,25 +1,37 @@
 
 import React, { useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, CheckSquare, Calendar, BarChart2, Settings as SettingsIcon } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { LayoutGrid, CheckSquare, Calendar, BarChart2, Settings as SettingsIcon, LogOut } from 'lucide-react';
 import Goals from './pages/Goals';
 import Daily from './pages/Daily';
 import Planner from './pages/Planner';
 import Progress from './pages/Progress';
 import Settings from './pages/Settings';
+import Landing from './pages/Landing';
+import SignUp from './pages/SignUp';
+import SignIn from './pages/SignIn';
+import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
 import { usePlannerStore } from './store/usePlannerStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { settings } = usePlannerStore();
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
   
   const navItems = [
-    { path: '/', label: 'Daily', icon: CheckSquare },
-    { path: '/goals', label: 'Goals', icon: LayoutGrid },
-    { path: '/planner', label: 'Planner', icon: Calendar },
-    { path: '/progress', label: 'Progress', icon: BarChart2 },
-    { path: '/settings', label: 'Settings', icon: SettingsIcon },
+    { path: '/dashboard', label: 'Daily', icon: CheckSquare },
+    { path: '/dashboard/goals', label: 'Goals', icon: LayoutGrid },
+    { path: '/dashboard/planner', label: 'Planner', icon: Calendar },
+    { path: '/dashboard/progress', label: 'Progress', icon: BarChart2 },
+    { path: '/dashboard/settings', label: 'Settings', icon: SettingsIcon },
   ];
 
   return (
@@ -91,6 +103,13 @@ const Sidebar = () => {
             </Link>
           );
         })}
+        <button
+          onClick={handleLogout}
+          className="hidden md:flex items-center gap-3 p-4 md:px-5 md:py-4 rounded-2xl transition-all text-slate-500 hover:text-red-400 mt-auto"
+        >
+          <LogOut size={24} />
+          <span className="text-[10px] md:text-sm font-bold uppercase tracking-widest">Logout</span>
+        </button>
       </div>
     </nav>
   );
@@ -140,20 +159,20 @@ const App: React.FC = () => {
     };
   }, []);
 
-  return (
-    <Router>
+  const Dashboard = () => {
+    const location = useLocation();
+    
+    return (
       <div className="flex flex-col md:flex-row min-h-screen transition-colors duration-300" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
         <Sidebar />
         
         <main className="flex-1 p-6 md:p-12 pb-24 md:pb-12 max-w-6xl mx-auto w-full overflow-y-auto">
           <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<Daily />} />
-              <Route path="/goals" element={<Goals />} />
-              <Route path="/planner" element={<Planner />} />
-              <Route path="/progress" element={<Progress />} />
-              <Route path="/settings" element={<Settings />} />
-            </Routes>
+            {location.pathname === '/dashboard' && <Daily key="daily" />}
+            {location.pathname === '/dashboard/goals' && <Goals key="goals" />}
+            {location.pathname === '/dashboard/planner' && <Planner key="planner" />}
+            {location.pathname === '/dashboard/progress' && <Progress key="progress" />}
+            {location.pathname === '/dashboard/settings' && <Settings key="settings" />}
           </AnimatePresence>
         </main>
 
@@ -164,6 +183,22 @@ const App: React.FC = () => {
           <div className="absolute top-[20%] left-[20%] w-px h-px" style={{ boxShadow: `0 0 100px 50px rgba(var(--accent-color-rgb, 34, 211, 238), 0.1)` }}></div>
         </div>
       </div>
+    );
+  };
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
+        <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
+        <Route path="/signin" element={<PublicRoute><SignIn /></PublicRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/dashboard/goals" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/dashboard/planner" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/dashboard/progress" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/dashboard/settings" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </Router>
   );
 };
