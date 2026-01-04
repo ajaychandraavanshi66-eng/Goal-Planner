@@ -1,9 +1,38 @@
-// Detect if we're in production (deployed on Render)
-const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  (isProduction 
-    ? 'https://goal-planner-backend-pm5i.onrender.com/api' 
-    : 'http://localhost:5000/api');
+// Get API URL - check multiple sources
+function getApiBaseUrl(): string {
+  // 1. Check environment variable first (set at build time)
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // 2. Check if we're in production (deployed)
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const isProduction = hostname !== 'localhost' && 
+                        hostname !== '127.0.0.1' &&
+                        !hostname.includes('127.0.0.1') &&
+                        !hostname.includes('192.168') &&
+                        !hostname.includes('10.0');
+    
+    if (isProduction) {
+      return 'https://goal-planner-backend-pm5i.onrender.com/api';
+    }
+  }
+  
+  // 3. Default to localhost for development
+  return 'http://localhost:5000/api';
+}
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Debug logging
+if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
+  console.log('🔧 API Configuration:', {
+    hostname: window.location.hostname,
+    apiUrl: API_BASE_URL,
+    envUrl: import.meta.env.VITE_API_URL
+  });
+}
 
 class ApiService {
   private getToken(): string | null {
