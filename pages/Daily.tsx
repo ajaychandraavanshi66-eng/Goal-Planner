@@ -32,10 +32,10 @@ const Daily: React.FC = () => {
   return (
     <div className="space-y-8 pb-12">
       {/* Header Summary */}
-      <GlassCard className="neon-border-cyan overflow-visible">
+      <GlassCard className="overflow-visible" borderColor={`${settings.accentColor}40`} style={{ boxShadow: `0 0 10px ${settings.accentColor}33` }}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold mb-1 font-outfit tracking-tight">Today's <span className="text-cyan-400">Focus</span></h1>
+            <h1 className="text-3xl font-bold mb-1 font-outfit tracking-tight">Today's <span style={{ color: settings.accentColor }}>Focus</span></h1>
             <p className="opacity-60 text-sm font-medium">{dayjs().format('dddd, MMMM D, YYYY')}</p>
           </div>
           <div className="flex gap-8 items-center">
@@ -104,7 +104,7 @@ const Daily: React.FC = () => {
                                   />
                                 </div>
                               ) : (
-                                <Circle className="w-9 h-9 opacity-30 hover:text-cyan-400 hover:scale-105 transition-all" />
+                                <Circle className="w-9 h-9 opacity-30 hover:scale-105 transition-all" style={{ color: settings.accentColor }} />
                               )}
                             </button>
                             <div className="min-w-0">
@@ -113,7 +113,7 @@ const Daily: React.FC = () => {
                               </h3>
                               <div className="flex items-center gap-3 text-[11px] opacity-50 mt-1 font-medium">
                                 <span className="flex items-center gap-1.5">
-                                  <Clock size={12} className="text-cyan-400/70" />
+                                  <Clock size={12} style={{ color: `${settings.accentColor}B3` }} />
                                   {task.startTime}
                                 </span>
                                 <span className="opacity-30">•</span>
@@ -151,7 +151,14 @@ const Daily: React.FC = () => {
               <p className="opacity-40 text-xl font-outfit italic">Your schedule is clear for today.</p>
               <button 
                 onClick={() => window.location.hash = '#/goals'}
-                className="px-6 py-2 rounded-xl bg-cyan-400/10 text-cyan-400 font-bold border border-cyan-400/20 hover:bg-cyan-400/20 transition-all active:scale-95"
+                className="px-6 py-2 rounded-xl font-bold transition-all active:scale-95"
+                style={{ 
+                  backgroundColor: `${settings.accentColor}1A`,
+                  color: settings.accentColor,
+                  border: `1px solid ${settings.accentColor}33`
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${settings.accentColor}33`}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = `${settings.accentColor}1A`}
               >
                 Plan your next goals
               </button>

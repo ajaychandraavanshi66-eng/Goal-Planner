@@ -62,10 +62,32 @@ export const usePlannerStore = () => {
   const [data, setData] = useState<PlannerData>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      // Migration for new settings
-      if (!parsed.settings.theme) parsed.settings.theme = 'dark';
-      return parsed;
+      try {
+        const parsed = JSON.parse(saved);
+        // Migration for new settings
+        if (!parsed.settings) {
+          parsed.settings = DEFAULT_SETTINGS;
+        } else {
+          if (!parsed.settings.theme) parsed.settings.theme = 'dark';
+          // Ensure all settings fields exist
+          parsed.settings = { ...DEFAULT_SETTINGS, ...parsed.settings };
+        }
+        // Ensure all required fields exist
+        return {
+          goals: parsed.goals || INITIAL_GOALS,
+          tasks: parsed.tasks || INITIAL_TASKS,
+          completions: parsed.completions || [],
+          settings: parsed.settings
+        };
+      } catch (error) {
+        console.error('Error parsing stored data:', error);
+        return {
+          goals: INITIAL_GOALS,
+          tasks: INITIAL_TASKS,
+          completions: [],
+          settings: DEFAULT_SETTINGS
+        };
+      }
     }
     return {
       goals: INITIAL_GOALS,
@@ -143,7 +165,12 @@ export const usePlannerStore = () => {
   };
 
   const updateSettings = (updates: Partial<UserSettings>) => {
-    setData(prev => ({ ...prev, settings: { ...prev.settings, ...updates } }));
+    setData(prev => {
+      const newSettings = { ...prev.settings, ...updates };
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: newSettings }));
+      return { ...prev, settings: newSettings };
+    });
   };
 
   return {
