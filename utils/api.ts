@@ -1,11 +1,16 @@
 // Get API URL - check multiple sources
 function getApiBaseUrl(): string {
-  // 1. Check environment variable first (set at build time)
+  // 1. Check window.API_CONFIG (set by api-config.js)
+  if (typeof window !== 'undefined' && (window as any).API_CONFIG?.baseUrl) {
+    return (window as any).API_CONFIG.baseUrl;
+  }
+  
+  // 2. Check environment variable (set at build time)
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
   
-  // 2. Check if we're in production (deployed)
+  // 3. Check if we're in production (deployed)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     const isProduction = hostname !== 'localhost' && 
@@ -19,7 +24,7 @@ function getApiBaseUrl(): string {
     }
   }
   
-  // 3. Default to localhost for development
+  // 4. Default to localhost for development
   return 'http://localhost:5000/api';
 }
 
