@@ -1,4 +1,9 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Detect if we're in production (deployed on Render)
+const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (isProduction 
+    ? 'https://goal-planner-backend-pm5i.onrender.com/api' 
+    : 'http://localhost:5000/api');
 
 class ApiService {
   private getToken(): string | null {
